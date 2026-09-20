@@ -76,7 +76,7 @@ export default function RestoringDivisionSimulator() {
         Q_bin: toBin(Q, bits),
         N: N,
         msbA: msb,
-        desc: `รอบที่ ${r}: ทำการลบ A = A - M $\\rightarrow$ ได้ A = ${toBin(A, aBits)} (MSB ของ A คือ ${msb})`,
+        desc: `รอบที่ ${r}: ทำการลบ A = A - M → ได้ A = ${toBin(A, aBits)} (MSB ของ A คือ ${msb})`,
         isRestored: false
       });
 
@@ -96,7 +96,7 @@ export default function RestoringDivisionSimulator() {
           Q_bin: toBin(Q, bits),
           N: N,
           msbA: (A >> (aBits - 1)) & 1,
-          desc: `รอบที่ ${r}: เนื่องจาก MSB ของ A เป็น 1 (ผลลัพธ์ติดลบ) $\\rightarrow$ กู้คืนค่า A เดิม (${toBin(A, aBits)}) และกำหนด Q₀ = 0, ลดรอบเหลือ N = ${N}`,
+          desc: `รอบที่ ${r}: เนื่องจาก MSB ของ A เป็น 1 (ผลลัพธ์ติดลบ) → กู้คืนค่า A เดิม (${toBin(A, aBits)}) และกำหนด Q₀ = 0, ลดรอบเหลือ N = ${N}`,
           isRestored: true
         });
       } else {
@@ -113,7 +113,7 @@ export default function RestoringDivisionSimulator() {
           Q_bin: toBin(Q, bits),
           N: N,
           msbA: (A >> (aBits - 1)) & 1,
-          desc: `รอบที่ ${r}: เนื่องจาก MSB ของ A เป็น 0 (ผลลัพธ์เป็นบวก) $\\rightarrow$ ไม่ต้อง Restore คงค่า A ไว้ และกำหนด Q₀ = 1, ลดรอบเหลือ N = ${N}`,
+          desc: `รอบที่ ${r}: เนื่องจาก MSB ของ A เป็น 0 (ผลลัพธ์เป็นบวก) → ไม่ต้อง Restore คงค่า A ไว้ และกำหนด Q₀ = 1, ลดรอบเหลือ N = ${N}`,
           isRestored: false
         });
       }

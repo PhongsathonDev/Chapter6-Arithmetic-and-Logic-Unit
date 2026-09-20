@@ -210,7 +210,7 @@ export default function Ieee754Converter() {
             <div style={{ display: 'flex', justifyContent: 'space-around', background: '#f8fafc', padding: '12px', borderRadius: '8px', marginTop: '12px', fontSize: '13px', color: '#475569', flexWrap: 'wrap', gap: '8px' }}>
               <span>🟦 <strong>Sign (S):</strong> {conversion.signBit} ({conversion.isNegative ? 'ค่าลบ' : 'ค่าบวก'})</span>
               <span>🟩 <strong>Actual Exp (e):</strong> {conversion.actualExp} | <strong>Biased Exp (E):</strong> {conversion.biasedExp}</span>
-              <span>🟨 <strong>Normalized Form:</strong> 1.{conversion.mantissa23.slice(0, 6)}... × 2^{conversion.actualExp}</span>
+              <span>🟨 <strong>Normalized Form:</strong> 1.{conversion.mantissa23.slice(0, 6)}... × 2<sup>{conversion.actualExp}</sup></span>
             </div>
           </div>
 
@@ -253,7 +253,7 @@ export default function Ieee754Converter() {
                   <div className="step-title">จัดรูปเป็น Normal Form (1.M × 2ᵉ)</div>
                   <div className="step-desc">
                     เลื่อนจุดทศนิยมเพื่อให้เหลือเลข 1 หน้าจุดตัวเดียว (Normalize):<br/>
-                    {conversion.fullRawBin}₂ $\rightarrow$ <strong>1.{conversion.mantissa23.slice(0, 10)}...₂ × 2^{conversion.actualExp}</strong><br/>
+                    {conversion.fullRawBin}₂ → <strong>1.{conversion.mantissa23.slice(0, 10)}...₂ × 2<sup>{conversion.actualExp}</sup></strong><br/>
                     • ได้เลขชี้กำลังแท้จริง <strong>e = {conversion.actualExp}</strong>
                   </div>
                 </div>
@@ -265,8 +265,8 @@ export default function Ieee754Converter() {
                 <div className="step-body">
                   <div className="step-title">คำนวณ Biased Exponent (E) และ Mantissa (M)</div>
                   <div className="step-desc">
-                    • <strong>Biased Exponent:</strong> E = e + 127 = {conversion.actualExp} + 127 = <strong>{conversion.biasedExp}₁₀</strong> $\rightarrow$ <code>{conversion.expBin}₂</code> (8 บิต)<br/>
-                    • <strong>Mantissa:</strong> ตัดเลข 1 ข้างหน้าออก (Implicit Leading Bit) นำเศษหลังจุดมาเติม 0 ให้ครบ 23 บิต $\rightarrow$ <code>{conversion.mantissa23}</code>
+                    • <strong>Biased Exponent:</strong> E = e + 127 = {conversion.actualExp} + 127 = <strong>{conversion.biasedExp}₁₀</strong> → <code>{conversion.expBin}₂</code> (8 บิต)<br/>
+                    • <strong>Mantissa:</strong> ตัดเลข 1 ข้างหน้าออก (Implicit Leading Bit) นำเศษหลังจุดมาเติม 0 ให้ครบ 23 บิต → <code>{conversion.mantissa23}</code>
                   </div>
                 </div>
               </div>

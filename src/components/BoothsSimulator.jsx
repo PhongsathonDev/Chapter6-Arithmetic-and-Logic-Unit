@@ -81,7 +81,7 @@ export default function BoothsSimulator() {
         Q_neg1: Q_neg1,
         N: N,
         pair: pair,
-        desc: `รอบที่ ${r}: ตรวจสอบ Q₀ Q₋₁ = ${pair} $\\rightarrow$ ${arithDesc}`,
+        desc: `รอบที่ ${r}: ตรวจสอบ Q₀ Q₋₁ = ${pair} → ${arithDesc}`,
         arithAction: pair
       });
 
