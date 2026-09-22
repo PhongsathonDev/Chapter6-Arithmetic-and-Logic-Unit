@@ -1,9 +1,12 @@
 /**
- * Chapter 6: ALU - Analytics & Presence Tracker (Compatible Fallback)
+ * Chapter 6: ALU - Activity & Real-time Presence Engine
+ * จัดการสถานะการออนไลน์ (Live Presence) และบันทึกสถิติเพื่อนำส่งสู่ศูนย์กลาง Portal-Hub
+ * ทำงานเงียบสนิท ไม่รบกวนหน้าเว็บ และทนทานต่อการบล็อกของ Ad Blocker และ Privacy Shields
  */
 (function () {
   'use strict';
 
+  // ค้นหาพารามิเตอร์ของ script tag ตัวเอง
   const currentScript = document.currentScript || (function () {
     const scripts = document.getElementsByTagName('script');
     for (let i = scripts.length - 1; i >= 0; i--) {
@@ -18,6 +21,7 @@
   const customSiteId = currentScript ? currentScript.getAttribute('data-site') : null;
   const customSiteTitle = currentScript ? currentScript.getAttribute('data-title') : null;
 
+  // Firebase Realtime Database Config
   const DEFAULT_FIREBASE_CONFIG = {
     apiKey: "AIzaSyDXlcEZtNZ10qCImyGA9VseWevwXpulIaE",
     authDomain: "tct36-752e1.firebaseapp.com",
@@ -29,6 +33,7 @@
     measurementId: "G-YX6TCVM5KG"
   };
 
+  // Helper โหลด Script แบบ Promise ปลอดภัยจาก Deadlock
   function loadScript(src) {
     return new Promise((resolve) => {
       const existing = document.querySelector(`script[src="${src}"]`);
@@ -44,6 +49,7 @@
     });
   }
 
+  // Safe Storage Access (ทนทานต่อ file://, Private Mode, และการบล็อก Storage)
   let _memorySessionId = null;
   let _memoryVisitorId = null;
   const _memoryStore = {};
@@ -95,11 +101,17 @@
     return `${y}-${m}-${day}`;
   }
 
+  // ==========================================
+  // ตรวจจับระบบปฏิบัติการ, เบราว์เซอร์, และช่องทาง
+  // ==========================================
   function detectClientTech() {
     const ua = navigator.userAgent || '';
+
+    // Device
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
     const device = isMobile ? 'mobile' : 'desktop';
 
+    // OS
     let os = 'Unknown OS';
     if (/Windows/i.test(ua)) os = 'Windows';
     else if (/Android/i.test(ua)) os = 'Android';
@@ -108,6 +120,7 @@
     else if (/Linux/i.test(ua)) os = 'Linux';
     else if (/CrOS/i.test(ua)) os = 'ChromeOS';
 
+    // Browser
     let browser = 'Unknown Browser';
     if (/Line/i.test(ua)) browser = 'Line App';
     else if (/FBAN|FBAV/i.test(ua)) browser = 'Facebook App';
@@ -117,8 +130,10 @@
     else if (/Firefox/i.test(ua)) browser = 'Firefox';
     else if (/Opera|OPR/i.test(ua)) browser = 'Opera';
 
+    // Screen
     const screenRes = `${window.screen.width}x${window.screen.height}`;
 
+    // Referrer Category
     let refCategory = 'Direct / บุ๊กมาร์กหรือพิมพ์เอง';
     const ref = document.referrer;
     if (ref) {
@@ -138,6 +153,9 @@
     return { device, os, browser, screenRes, refCategory };
   }
 
+  // ==========================================
+  // ติดตามการเลื่อนอ่าน (Scroll Depth) และเวลา (Time on Page)
+  // ==========================================
   let maxScrollDepth = 0;
   const startTime = Date.now();
 
@@ -155,6 +173,9 @@
 
   window.addEventListener('scroll', trackScroll, { passive: true });
 
+  // ==========================================
+  // เริ่มต้น Firebase App และการบันทึกสถานะ
+  // ==========================================
   function ensureFirebaseApp() {
     const cfg = (window.PORTAL_CONFIG && window.PORTAL_CONFIG.firebase) ||
                 (window.ANALYTICS_CONFIG && window.ANALYTICS_CONFIG.firebase) ||
@@ -179,6 +200,7 @@
       const siteId = customSiteId || 'chapter6-alu';
       const siteTitle = customSiteTitle || document.title || 'CS 3106 บทที่ 6: หน่วยคำนวณและตรรกะ (ALU)';
 
+      // โหลด Firebase SDKs (ถ้ายังไม่มีในหน้าเว็บ)
       if (!window.firebase) {
         await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
       }
@@ -186,6 +208,7 @@
         await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js');
       }
 
+      // รอจนกว่า firebase.database พร้อม (ไม่เกิน 2 วินาที)
       let waitTimes = 0;
       while ((!window.firebase || !window.firebase.database) && waitTimes < 20) {
         await new Promise((r) => setTimeout(r, 100));
@@ -197,6 +220,7 @@
 
       const tech = detectClientTech();
 
+      // บันทึกข้อมูล Site
       db.ref(`analytics/sites/${siteId}`).update({
         id: siteId,
         title: siteTitle,
@@ -205,10 +229,15 @@
         path: location.pathname || '/'
       }).catch(() => {});
 
+      // ตรวจจับ Real-time Presence ทันที
       setupPresence(db, siteId, siteTitle, tech);
+
+      // บันทึกสถิติการเปิดหน้าเว็บ
       recordPageView(db, siteId, siteTitle, tech);
 
-    } catch (err) {}
+    } catch (err) {
+      // ทำงานแบบเงียบสนิท
+    }
   }
 
   function setupPresence(db, siteId, siteTitle, tech) {
@@ -231,6 +260,7 @@
       currentScroll: maxScrollDepth
     };
 
+    // ส่งสถานะ Presence ทันทีไม่ต้องรอ connected handshake
     presenceRef.set(presenceData).catch(() => {});
     presenceRef.onDisconnect().remove();
 
@@ -241,6 +271,7 @@
       }
     });
 
+    // Heartbeat ทุก 30 วินาที พร้อมอัปเดต Scroll Depth
     const heartbeatTimer = setInterval(() => {
       trackScroll();
       presenceRef.update({
@@ -266,8 +297,11 @@
     }
 
     const dayStatsRef = db.ref(`analytics/stats/${siteId}/${today}`);
+    // ยอดวิวรวมและรายชั่วโมง
     dayStatsRef.child('views').transaction((c) => (c || 0) + 1).catch(() => {});
     dayStatsRef.child(`hourly/${hour}`).transaction((c) => (c || 0) + 1).catch(() => {});
+    
+    // ข้อมูลเชิงลึก: อุปกรณ์, OS, เบราว์เซอร์, แหล่งที่มา, ขนาดจอ
     dayStatsRef.child(`devices/${tech.device}`).transaction((c) => (c || 0) + 1).catch(() => {});
     dayStatsRef.child(`os/${tech.os}`).transaction((c) => (c || 0) + 1).catch(() => {});
     dayStatsRef.child(`browsers/${tech.browser}`).transaction((c) => (c || 0) + 1).catch(() => {});
@@ -276,16 +310,19 @@
     const safeRefKey = tech.refCategory.replace(/[\.\#\$\[\]\/]/g, '_');
     dayStatsRef.child(`referrers/${safeRefKey}`).transaction((c) => (c || 0) + 1).catch(() => {});
 
+    // นับ Unique คนไม่ซ้ำของวันนี้
     if (isNewToday) {
       dayStatsRef.child('uniques').transaction((c) => (c || 0) + 1).catch(() => {});
     }
 
+    // สถิติสะสมตลอดกาล
     const totalRef = db.ref(`analytics/totals/${siteId}`);
     totalRef.child('views').transaction((c) => (c || 0) + 1).catch(() => {});
     if (isNewToday) {
       totalRef.child('uniques').transaction((c) => (c || 0) + 1).catch(() => {});
     }
 
+    // บันทึกกิจกรรมการเข้าชมล่าสุด
     const logRef = db.ref(`analytics/recent_logs/${siteId}`).push();
     logRef.set({
       timestamp: Date.now(),
@@ -301,6 +338,7 @@
       sessionId: getSessionId()
     }).catch(() => {});
 
+    // เมื่อผู้ใช้ออกจากหน้าเว็บ ให้อัปเดต Duration และ Scroll Depth สุดท้าย
     window.addEventListener('beforeunload', () => {
       const durationSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000));
       trackScroll();
@@ -311,6 +349,7 @@
     });
   }
 
+  // เริ่มต้นทำงาน
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initActivityEngine);
   } else {
